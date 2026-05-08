@@ -91,9 +91,12 @@
 let totalSeconds = 0;
 let remainingSeconds = 0;
 let interval = null;
-let soundOn = true;
 let paused = false;
 let blinkInterval = null;
+let soundOn = true;
+
+/* ✅ AudioContext (wird per Klick freigeschaltet) */
+let audioCtx = null;
 
 const timeDisplay = document.getElementById("timeDisplay");
 const progress = document.getElementById("progress");
@@ -114,6 +117,12 @@ function updateDisplay() {
 }
 
 function startTimer() {
+
+    /* ✅ AudioContext darf nur hier erzeugt werden (Benutzeraktion!) */
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
     if (interval) return;
 
     if (remainingSeconds <= 0) {
@@ -184,25 +193,26 @@ document.getElementById("pauseBtn").onclick = pauseTimer;
 document.getElementById("resetBtn").onclick = resetTimer;
 
 function playMarimba() {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!audioCtx) return;
+
     const notes = [523, 659, 784, 1046];
 
     notes.forEach((freq, i) => {
-        let osc = ctx.createOscillator();
-        let gain = ctx.createGain();
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
 
         osc.frequency.value = freq;
         osc.type = "sine";
 
-        gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.3);
-        gain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + i * 0.3 + 0.05);
-        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.3 + 0.8);
+        gain.gain.setValueAtTime(0.0001, audioCtx.currentTime + i * 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime + i * 0.3 + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + i * 0.3 + 0.8);
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioCtx.destination);
 
-        osc.start(ctx.currentTime + i * 0.3);
-        osc.stop(ctx.currentTime + i * 0.3 + 1);
+        osc.start(audioCtx.currentTime + i * 0.3);
+        osc.stop(audioCtx.currentTime + i * 0.3 + 1);
     });
 }
 </script>
